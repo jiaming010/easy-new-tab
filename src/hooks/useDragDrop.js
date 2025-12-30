@@ -50,12 +50,12 @@ export function useDragDrop(apps, setApps, openFolder, setOpenFolder) {
         const activeType = activeData?.type;
         const overData = over.data.current;
 
-        // 从文件夹拖出应用
+        // 处理从文件夹拖出的应用
         if (activeType === 'folder-app') {
             const activeApp = activeData.app;
             const sourceFolderId = activeData.sourceFolderId;
 
-            // 拖到另一个文件夹
+            // 1. 拖到另一个文件夹图标上
             if (overData?.type === 'folder') {
                 const targetFolderId = overData.app.id;
 
@@ -91,7 +91,33 @@ export function useDragDrop(apps, setApps, openFolder, setOpenFolder) {
                 return;
             }
 
-            // 拖到主屏幕
+            // 2. 核心修复：处理文件夹内部排序
+            // 如果目标也是文件夹内的应用，且属于同一个源文件夹
+            if (overData?.type === 'folder-app' && overData.sourceFolderId === sourceFolderId) {
+                setApps(items => {
+                    return items.map(item => {
+                        if (item.id === sourceFolderId && item.type === 'folder') {
+                            const oldIndex = item.apps.findIndex(a => a.id === activeApp.id);
+                            const newIndex = item.apps.findIndex(a => a.id === overData.app.id);
+                            
+                            if (oldIndex !== -1 && newIndex !== -1) {
+                                const newSubApps = arrayMove(item.apps, oldIndex, newIndex);
+                                
+                                // 同步更新当前打开的文件夹视图状态
+                                if (openFolder && openFolder.id === sourceFolderId) {
+                                    setOpenFolder({ ...item, apps: newSubApps });
+                                }
+                                
+                                return { ...item, apps: newSubApps };
+                            }
+                        }
+                        return item;
+                    });
+                });
+                return; 
+            }
+
+            // 3. 拖到主屏幕（若非上述两种情况，则视为移出文件夹）
             const targetIndex = apps.findIndex(item => item.id === over.id);
 
             setApps(items => {
@@ -169,7 +195,8 @@ export function useDragDrop(apps, setApps, openFolder, setOpenFolder) {
     const getActiveApp = () => {
         if (!activeId) return null;
 
-        if (activeId.startsWith('folder-')) {
+        // 处理处于拖拽状态的文件夹内部应用 ID
+        if (typeof activeId === 'string' && activeId.startsWith('folder-')) {
             const parts = activeId.split('-app-');
             if (parts.length === 2) {
                 const appId = parts[1];

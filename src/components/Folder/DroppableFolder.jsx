@@ -42,7 +42,7 @@ export default function DroppableFolder({
         transition,
         opacity: isDragging ? 0.3 : 1,
         // 保证层级，避免被周围元素遮挡
-        zIndex: isDragging || isOver ? 50 : 'auto', 
+        zIndex: isDragging || isOver ? 50 : 'auto',
     };
 
     const displayApps = [...app.apps.slice(0, 9)];
@@ -52,7 +52,7 @@ export default function DroppableFolder({
 
     return (
         <div
-            className="relative flex flex-col items-center gap-1 touch-none"
+            className="relative flex flex-col items-center gap-1 touch-none outline-none"
             ref={setNodeRef}
             style={style}
             {...attributes}
@@ -73,12 +73,12 @@ export default function DroppableFolder({
                 <motion.div
                     animate={isOver ? "hover" : "idle"}
                     variants={{
-                        idle: { 
-                            scale: 1, 
+                        idle: {
+                            scale: 1,
                             backgroundColor: "rgba(255, 255, 255, 0.2)", // 这里对应 bg-white/20
                             boxShadow: "0 0 0px rgba(0,0,0,0)"
                         },
-                        hover: { 
+                        hover: {
                             scale: 1.15, // iOS 风格的显著放大
                             backgroundColor: "rgba(255, 255, 255, 0.35)", // 变亮
                             boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255,255,255,0.3)" // 添加柔和阴影和微发光
@@ -103,7 +103,7 @@ export default function DroppableFolder({
                         </div>
                     ))}
                 </motion.div>
-                
+
                 <span className="text-sm text-white font-medium drop-shadow-md transition-opacity duration-200">
                     {app.name}
                 </span>

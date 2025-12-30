@@ -39,6 +39,7 @@ export default function SortableAppIcon({
         <div
             ref={setNodeRef}
             style={style}
+            className="outline-none"
             {...attributes}
             {...listeners}
         >

@@ -11,6 +11,7 @@ import SortableAppIcon from './components/AppIcon/SortableAppIcon';
 import AppIcon from './components/AppIcon/AppIcon';
 import DroppableFolder from './components/Folder/DroppableFolder';
 import FolderModal from './components/Folder/FolderModal';
+import FolderMiniIcon from './components/Folder/FolderMiniIcon'; // 新增导入
 import AppModal from './components/Modal/AppModal';
 import SettingsPanel from './components/Modal/SettingsPanel';
 
@@ -290,18 +291,25 @@ export default function IOSNewTab() {
 
                     <DragOverlay>
                         {activeApp ? (
-                            <div className="opacity-80 cursor-grabbing scale-110">
+                            <div className="cursor-grabbing scale-110">
                                 {activeApp.type === 'folder' ? (
                                     <div className="flex flex-col items-center gap-1">
-                                        <div className="grid grid-cols-3 gap-1 p-2 bg-white/20 backdrop-blur-md w-20 h-20 rounded-2xl overflow-hidden border border-white/10">
-                                            {activeApp.apps.slice(0, 9).map((subApp, idx) => {
-                                                const SubIcon = iconLibrary[subApp.iconName] || iconLibrary.Globe;
-                                                return (
-                                                    <div key={subApp.id || idx} className={`w-full h-full rounded-full ${subApp.color} flex items-center justify-center`}>
-                                                        <SubIcon size={8} />
+                                        <div className="grid grid-cols-3 gap-1.5 p-2.5 bg-white/35 backdrop-blur-md w-20 h-20 rounded-2xl overflow-hidden border border-white/10 shadow-xl">
+                                            {(() => {
+                                                const displayApps = [...(activeApp.apps || []).slice(0, 9)];
+                                                while (displayApps.length < 9) {
+                                                    displayApps.push({ id: `empty-overlay-${displayApps.length}`, isEmpty: true });
+                                                }
+                                                return displayApps.map((subApp, idx) => (
+                                                    <div key={subApp.id || idx} className="relative z-10">
+                                                        {subApp.isEmpty ? (
+                                                            <div className="aspect-square rounded-md bg-white/5 border border-white/5" />
+                                                        ) : (
+                                                            <FolderMiniIcon app={subApp} />
+                                                        )}
                                                     </div>
-                                                );
-                                            })}
+                                                ));
+                                            })()}
                                         </div>
                                         <span className="text-sm text-white font-medium drop-shadow-md">{activeApp.name}</span>
                                     </div>
