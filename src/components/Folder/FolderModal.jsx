@@ -47,22 +47,26 @@ export default function FolderModal({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+                    className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm"
                 />
                 <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
+                    // 调整初始动画：从中心放大
+                    initial={{ scale: 0.5, opacity: 0, x: "-50%", y: "-50%" }}
+                    animate={{ scale: 1, opacity: 1, x: "-50%", y: "-50%" }}
+                    exit={{ scale: 0.5, opacity: 0, x: "-50%", y: "-50%" }}
+                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[85%] max-w-2xl bg-white/20 backdrop-blur-2xl border border-white/20 rounded-3xl p-8 shadow-2xl max-h-[85vh] overflow-y-auto flex flex-col"
+                    // 修改点：w-[22rem] 固定宽度，rounded-[2.5rem] 更大的圆角
+                    className="fixed top-1/2 left-1/2 z-[70] w-[22rem] bg-white/20 backdrop-blur-3xl border border-white/20 rounded-[2.5rem] p-6 shadow-2xl flex flex-col"
                 >
-                    <div className="flex justify-between items-center w-full mb-8 text-white">
-                        <h2 className="text-3xl font-bold">{openFolder.name}</h2>
+                    <div className="flex justify-between items-center w-full mb-6 text-white px-2">
+                        {/* 修改点：字体改小一点，适应紧凑布局 */}
+                        <h2 className="text-xl font-bold truncate pr-4">{openFolder.name}</h2>
                         <button
                             onClick={onClose}
-                            className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+                            className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
                         >
-                            <X size={20} />
+                            <X size={16} />
                         </button>
                     </div>
 
@@ -70,12 +74,14 @@ export default function FolderModal({
                         items={(openFolder.apps || []).map(app => `folder-${openFolder.id}-app-${app.id}`)}
                         strategy={rectSortingStrategy}
                     >
-                        <div className="grid grid-cols-4 gap-6 w-full place-items-center mb-6">
+                        {/* 修改点：grid-cols-3 (九宫格)，gap-4 (间距更紧凑) */}
+                        <div className="grid grid-cols-3 gap-4 w-full place-items-center mb-2">
                             {openFolder.apps?.map((app) => (
                                 <FolderAppIcon
                                     key={app.id}
                                     app={app}
-                                    size="lg"
+                                    // 修改点：使用 md 尺寸，避免图标过大
+                                    size="md" 
                                     folderId={openFolder.id}
                                     onEdit={(app) => onAddApp({ ...app, parentFolderId: openFolder.id })}
                                     onDelete={handleDeleteApp}
@@ -86,22 +92,22 @@ export default function FolderModal({
 
                             {editMode && (
                                 <div
-                                    className="flex flex-col items-center gap-1 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                                    className="flex flex-col items-center gap-2 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
                                     onClick={() => onAddApp({ parentFolderId: openFolder.id })}
                                 >
-                                    <div className="w-28 h-28 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20">
-                                        <Plus className="text-white" size={56} />
+                                    {/* 修改点：添加按钮的大小也随之调整 */}
+                                    <div className="w-[4.5rem] h-[4.5rem] rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-lg hover:bg-white/25 transition-all">
+                                        <Plus className="text-white" size={32} />
                                     </div>
-                                    <span className="text-sm text-white font-medium">添加</span>
+                                    <span className="text-xs text-white font-medium drop-shadow-md">添加</span>
                                 </div>
                             )}
                         </div>
                     </SortableContext>
 
                     {(!openFolder.apps || openFolder.apps.length === 0) && !editMode && (
-                        <div className="text-center text-white/70 py-8">
-                            <p>文件夹为空</p>
-                            <p className="text-sm mt-2">长按应用可拖入文件夹</p>
+                        <div className="text-center text-white/70 py-6">
+                            <p className="text-sm">文件夹为空</p>
                         </div>
                     )}
                 </motion.div>

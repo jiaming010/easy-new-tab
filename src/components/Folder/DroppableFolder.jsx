@@ -2,6 +2,7 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Edit3, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion'; // 引入 framer-motion
 import FolderMiniIcon from './FolderMiniIcon';
 
 const sizeClasses = {
@@ -25,7 +26,7 @@ export default function DroppableFolder({
         transform,
         transition,
         isDragging,
-        isOver
+        isOver // dnd-kit 检测是否正在拖拽悬停在上方
     } = useSortable({
         id: app.id,
         disabled: false,
@@ -40,6 +41,8 @@ export default function DroppableFolder({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.3 : 1,
+        // 保证层级，避免被周围元素遮挡
+        zIndex: isDragging || isOver ? 50 : 'auto', 
     };
 
     const displayApps = [...app.apps.slice(0, 9)];
@@ -49,14 +52,14 @@ export default function DroppableFolder({
 
     return (
         <div
-            className="relative flex flex-col items-center gap-1"
+            className="relative flex flex-col items-center gap-1 touch-none"
             ref={setNodeRef}
             style={style}
             {...attributes}
             {...listeners}
         >
             <div
-                className="flex flex-col items-center gap-1 cursor-pointer"
+                className="flex flex-col items-center gap-1 cursor-pointer group"
                 onClick={!isDragging ? onClick : undefined}
                 onContextMenu={(e) => {
                     e.preventDefault();
@@ -66,21 +69,49 @@ export default function DroppableFolder({
                     }
                 }}
             >
-                <div className={`grid grid-cols-3 gap-1.5 p-2.5 bg-white/20 backdrop-blur-md ${sizeClasses[size]} overflow-hidden border border-white/10 ${
-                    editMode ? 'ring-2 ring-yellow-400' : ''
-                } ${isOver ? 'ring-4 ring-green-400 bg-green-500/20 scale-105' : ''} transition-all`}>
+                {/* 使用 motion.div 替代普通 div 以实现丝滑动画 */}
+                <motion.div
+                    animate={isOver ? "hover" : "idle"}
+                    variants={{
+                        idle: { 
+                            scale: 1, 
+                            backgroundColor: "rgba(255, 255, 255, 0.2)", // 这里对应 bg-white/20
+                            boxShadow: "0 0 0px rgba(0,0,0,0)"
+                        },
+                        hover: { 
+                            scale: 1.15, // iOS 风格的显著放大
+                            backgroundColor: "rgba(255, 255, 255, 0.35)", // 变亮
+                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255,255,255,0.3)" // 添加柔和阴影和微发光
+                        }
+                    }}
+                    transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 20
+                    }}
+                    className={`grid grid-cols-3 gap-1.5 p-2.5 backdrop-blur-md ${sizeClasses[size]} overflow-hidden border border-white/10 ${
+                        editMode ? 'ring-2 ring-yellow-400' : ''
+                    }`}
+                >
                     {displayApps.map((subApp, idx) => (
-                        subApp.isEmpty ? (
-                            <div key={subApp.id} className="aspect-square rounded-md bg-white/5" />
-                        ) : (
-                            <FolderMiniIcon key={subApp.id || idx} app={subApp} />
-                        )
+                        <div key={subApp.id || idx} className="relative z-10">
+                            {subApp.isEmpty ? (
+                                <div className="aspect-square rounded-md bg-white/5 border border-white/5" />
+                            ) : (
+                                <FolderMiniIcon app={subApp} />
+                            )}
+                        </div>
                     ))}
-                </div>
-                <span className="text-sm text-white font-medium drop-shadow-md">{app.name}</span>
+                </motion.div>
+                
+                <span className="text-sm text-white font-medium drop-shadow-md transition-opacity duration-200">
+                    {app.name}
+                </span>
             </div>
+
+            {/* 编辑模式下的操作按钮 */}
             {editMode && (
-                <div className="absolute -top-2 -right-2 flex gap-1 z-10">
+                <div className="absolute -top-2 -right-2 flex gap-1 z-20">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
