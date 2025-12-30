@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 // 内联 SVG 图标组件
 const GoogleIcon = () => (
@@ -74,8 +74,34 @@ export default function SearchBar({ searchEngine = 'google' }) {
     const [query, setQuery] = useState('');
     const [engine, setEngine] = useState(searchEngine);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null); // 引用下拉菜单容器
     const currentEngine = searchEngines[engine] || searchEngines.google;
     const IconComponent = currentEngine.icon;
+
+    // 监听点击外部和 ESC 键
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        const handleEscKey = (event) => {
+            if (event.key === 'Escape') {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        if (isDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('keydown', handleEscKey);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleEscKey);
+        };
+    }, [isDropdownOpen]);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -97,25 +123,24 @@ export default function SearchBar({ searchEngine = 'google' }) {
                     {/* 搜索输入框 */}
                     <div className="relative flex items-center">
                         {/* 左侧图标下拉选择器 */}
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-                            <div className="relative">
+                        <div
+                            className="absolute left-4 top-1/2 -translate-y-1/2 z-10"
+                            ref={dropdownRef} // 绑定引用
+                        >
+                            <div className="relative outline-none">
                                 <button
                                     type="button"
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-md hover:shadow-lg transition-all p-1.5 border border-gray-200 hover:border-gray-300"
+                                    className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-md hover:shadow-lg transition-all p-1.5 border border-gray-200 hover:border-gray-300 outline-none"
                                     title={currentEngine.name}
                                 >
                                     <IconComponent />
                                 </button>
-                                
+
                                 {/* 下拉菜单 */}
                                 {isDropdownOpen && (
                                     <>
-                                        {/* 点击遮罩关闭下拉 */}
-                                        <div 
-                                            className="fixed inset-0 z-[100]" 
-                                            onClick={() => setIsDropdownOpen(false)}
-                                        />
+                                        {/* 移除全屏遮罩 div，改用 useEffect 监听点击外部 */}
                                         <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[101] min-w-[160px]">
                                             {Object.entries(searchEngines).map(([key, engine]) => {
                                                 const Icon = engine.icon;

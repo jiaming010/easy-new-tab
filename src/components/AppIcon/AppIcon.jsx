@@ -102,6 +102,14 @@ export default function AppIcon({
                         e.preventDefault();
                         // 优化：编辑模式下，点击应用图标直接打开编辑弹窗
                         onEdit?.(app);
+                    } else if (app.url && (app.url.startsWith('chrome://') || app.url.startsWith('edge://'))) {
+                        // 优化：Chrome/Edge 系统页面（如历史记录、书签）受安全策略限制，
+                        // 无法通过普通 <a> 标签在新标签页打开。
+                        // 需要拦截点击并通过 chrome.tabs.create API 打开。
+                        e.preventDefault();
+                        if (typeof chrome !== 'undefined' && chrome.tabs) {
+                            chrome.tabs.create({ url: app.url });
+                        }
                     }
                 }}
                 onContextMenu={(e) => {

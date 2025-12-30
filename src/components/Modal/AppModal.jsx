@@ -9,7 +9,7 @@ export default function AppModal({
                                      onClose,
                                      onSave,
                                      editingApp,
-                                     isFolder = false,
+                                     isFolder = false, // 引用 14
                                      folders = []
                                  }) {
     const [formData, setFormData] = useState({
@@ -17,10 +17,10 @@ export default function AppModal({
         url: '',
         iconName: 'Globe',
         color: 'bg-blue-500 text-white',
-        type: isFolder ? 'folder' : 'app',
+        type: isFolder ? 'folder' : 'app', // 引用 14
         apps: [],
         parentFolderId: null,
-        useFavicon: false,
+        useFavicon: true, // 修改：默认为 true，新增应用时默认开启“使用网站真实 Logo”
         customIcon: null,
         useCustomIcon: false
     });
@@ -31,12 +31,13 @@ export default function AppModal({
         if (editingApp) {
             setFormData({
                 ...editingApp,
-                useFavicon: editingApp.useFavicon || false,
+                useFavicon: editingApp.useFavicon || false, // 编辑时保持原有状态，若无则默认为 false
                 customIcon: editingApp.customIcon || null,
                 useCustomIcon: editingApp.useCustomIcon || false
             });
             setCustomIconPreview(editingApp.customIcon || null);
         } else {
+            // 新增模式
             setFormData({
                 name: '',
                 url: '',
@@ -45,7 +46,7 @@ export default function AppModal({
                 type: isFolder ? 'folder' : 'app',
                 apps: [],
                 parentFolderId: null,
-                useFavicon: false,
+                useFavicon: true, // 修改：重置表单时默认为 true
                 customIcon: null,
                 useCustomIcon: false
             });
@@ -285,7 +286,7 @@ export default function AppModal({
                                     type="button"
                                     onClick={() => setFormData({ ...formData, useFavicon: !formData.useFavicon, useCustomIcon: false })}
                                     className={`relative w-12 h-6 rounded-full transition-colors ${
-                                        formData.useFavicon && !formData.useCustomIcon ? 'bg-blue-500' : 'bg-gray-300'
+                                        formData.useFavicon && !formData.useCustomIcon ? 'bg-blue-50' : 'bg-gray-300'
                                     }`}
                                     disabled={formData.useCustomIcon}
                                 >

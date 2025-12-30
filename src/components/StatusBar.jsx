@@ -14,24 +14,6 @@ export default function StatusBar({ currentTime, editMode, onToggleEdit, onOpenS
 
             {/* 右侧功能按钮组 */}
             <div className="pr-2 flex items-center gap-3 pointer-events-auto outline-none">
-                {/* 设置按钮 - 编辑模式下自动隐藏 */}
-                <button
-                    onClick={onOpenSettings}
-                    className={`
-                        group flex items-center justify-center w-10 h-10 rounded-full 
-                        bg-white/10 backdrop-blur-md border border-white/10 shadow-lg 
-                        transition-all duration-300 ease-out
-                        hover:bg-white/20 active:scale-90
-                        outline-none
-                        ${editMode ? 'opacity-0 translate-x-4 scale-75 pointer-events-none' : 'opacity-100 translate-x-0 scale-100'}
-                    `}
-                    title="设置"
-                >
-                    <Settings
-                        size={20}
-                        className="opacity-90 transition-transform duration-500 group-hover:rotate-90"
-                    />
-                </button>
 
                 {/* 编辑/完成切换按钮 */}
                 <button
@@ -53,6 +35,25 @@ export default function StatusBar({ currentTime, editMode, onToggleEdit, onOpenS
                     ) : (
                         <Edit3 size={18} />
                     )}
+                </button>
+
+                {/* 设置按钮 - 编辑模式下自动隐藏 */}
+                <button
+                    onClick={onOpenSettings}
+                    className={`
+                        group flex items-center justify-center w-10 h-10 rounded-full 
+                        bg-white/10 backdrop-blur-md border border-white/10 shadow-lg 
+                        transition-all duration-300 ease-out
+                        hover:bg-white/20 active:scale-90
+                        outline-none
+                        ${editMode ? 'opacity-0 translate-x-4 scale-75 pointer-events-none' : 'opacity-100 translate-x-0 scale-100'}
+                    `}
+                    title="设置"
+                >
+                    <Settings
+                        size={20}
+                        className="opacity-90 transition-transform duration-500 group-hover:rotate-90"
+                    />
                 </button>
             </div>
         </div>
