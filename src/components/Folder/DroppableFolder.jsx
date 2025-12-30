@@ -1,8 +1,8 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Edit3, Trash2 } from 'lucide-react';
-import { motion } from 'framer-motion'; // 引入 framer-motion
+import { Edit3, Minus } from 'lucide-react'; // 引入 Minus
+import { motion } from 'framer-motion';
 import FolderMiniIcon from './FolderMiniIcon';
 
 const sizeClasses = {
@@ -26,7 +26,7 @@ export default function DroppableFolder({
         transform,
         transition,
         isDragging,
-        isOver // dnd-kit 检测是否正在拖拽悬停在上方
+        isOver
     } = useSortable({
         id: app.id,
         disabled: false,
@@ -41,7 +41,6 @@ export default function DroppableFolder({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.3 : 1,
-        // 保证层级，避免被周围元素遮挡
         zIndex: isDragging || isOver ? 50 : 'auto',
     };
 
@@ -69,19 +68,18 @@ export default function DroppableFolder({
                     }
                 }}
             >
-                {/* 使用 motion.div 替代普通 div 以实现丝滑动画 */}
                 <motion.div
                     animate={isOver ? "hover" : "idle"}
                     variants={{
                         idle: {
                             scale: 1,
-                            backgroundColor: "rgba(255, 255, 255, 0.2)", // 这里对应 bg-white/20
+                            backgroundColor: "rgba(255, 255, 255, 0.2)",
                             boxShadow: "0 0 0px rgba(0,0,0,0)"
                         },
                         hover: {
-                            scale: 1.15, // iOS 风格的显著放大
-                            backgroundColor: "rgba(255, 255, 255, 0.35)", // 变亮
-                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255,255,255,0.3)" // 添加柔和阴影和微发光
+                            scale: 1.15,
+                            backgroundColor: "rgba(255, 255, 255, 0.35)",
+                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255,255,255,0.3)"
                         }
                     }}
                     transition={{
@@ -111,26 +109,31 @@ export default function DroppableFolder({
 
             {/* 编辑模式下的操作按钮 */}
             {editMode && (
-                <div className="absolute -top-2 -right-2 flex gap-1 z-20">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit?.(app);
-                        }}
-                        className="p-1 bg-blue-500 rounded-full text-white shadow-lg hover:bg-blue-600 transition-colors"
-                    >
-                        <Edit3 size={14} />
-                    </button>
+                <>
+                    {/* 左上角删除按钮 (iOS 风格) */}
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             onDelete?.(app.id);
                         }}
-                        className="p-1 bg-red-500 rounded-full text-white shadow-lg hover:bg-red-600 transition-colors"
+                        className="absolute -top-2 -left-2 z-20 w-6 h-6 bg-gray-500/80 backdrop-blur-md rounded-full text-white flex items-center justify-center hover:bg-red-500 transition-colors shadow-sm"
+                        title="删除文件夹"
                     >
-                        <Trash2 size={14} />
+                        <Minus size={14} strokeWidth={3} />
                     </button>
-                </div>
+
+                    {/* 右上角编辑按钮 (保留用于重命名，样式微调) */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit?.(app);
+                        }}
+                        className="absolute -top-2 -right-2 z-20 w-6 h-6 bg-blue-500/80 backdrop-blur-md rounded-full text-white flex items-center justify-center hover:bg-blue-600 transition-colors shadow-sm"
+                        title="编辑文件夹"
+                    >
+                        <Edit3 size={12} />
+                    </button>
+                </>
             )}
         </div>
     );

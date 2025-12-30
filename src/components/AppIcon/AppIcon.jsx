@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit3, Trash2 } from 'lucide-react';
+import { Minus } from 'lucide-react'; // 替换 Edit3, Trash2 为 Minus
 import { iconLibrary } from '../../utils/iconLibrary';
 import { fetchIconWithCache } from '../../utils/iconCache';
 import { getInitials } from '../../utils/helpers';
@@ -86,7 +86,7 @@ export default function AppIcon({
                     setIsLoading(false);
                 });
         }
-    }, [app.customIcon, app.useFavicon, app.url, app.iconLoadFailed, app.useCustomIcon, hasCustomIcon]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [app.customIcon, app.useFavicon, app.url, app.iconLoadFailed, app.useCustomIcon, hasCustomIcon]);
 
     return (
         <div className="relative flex flex-col items-center gap-1">
@@ -100,6 +100,8 @@ export default function AppIcon({
                         onClick(e);
                     } else if (editMode) {
                         e.preventDefault();
+                        // 优化：编辑模式下，点击应用图标直接打开编辑弹窗
+                        onEdit?.(app);
                     }
                 }}
                 onContextMenu={(e) => {
@@ -163,27 +165,19 @@ export default function AppIcon({
                 </div>
                 <span className="text-sm text-white font-medium drop-shadow-md">{app.name}</span>
             </a>
+
+            {/* 优化后的删除按钮：iOS 风格左上角减号 */}
             {(editMode || showDeleteButton) && (
-                <div className="absolute -top-2 -right-2 flex gap-1 z-10">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit?.(app);
-                        }}
-                        className="p-1 bg-blue-500 rounded-full text-white shadow-lg hover:bg-blue-600 transition-colors"
-                    >
-                        <Edit3 size={14} />
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete?.(app.id);
-                        }}
-                        className="p-1 bg-red-500 rounded-full text-white shadow-lg hover:bg-red-600 transition-colors"
-                    >
-                        <Trash2 size={14} />
-                    </button>
-                </div>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete?.(app.id);
+                    }}
+                    className="absolute -top-2 -left-2 z-20 w-6 h-6 bg-gray-500/80 backdrop-blur-md rounded-full text-white flex items-center justify-center hover:bg-red-500 transition-colors shadow-sm"
+                    title="删除"
+                >
+                    <Minus size={14} strokeWidth={3} />
+                </button>
             )}
         </div>
     );

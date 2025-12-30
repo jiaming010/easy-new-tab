@@ -11,7 +11,8 @@ import {
     Shield, Star, Terminal, Trash, Upload,
     User, Users, Wifi, Youtube, Facebook,
     Instagram, Linkedin, Slack, Trello,
-    Figma, Dribbble, Chrome, Zap
+    Figma, Dribbble, Chrome, Zap,
+    History // 1. 新增引入 History 图标
 } from 'lucide-react';
 
 // 图标库
@@ -28,7 +29,8 @@ export const iconLibrary = {
     Shield, Star, Terminal, Trash, Upload,
     User, Users, Wifi, Youtube, Facebook,
     Instagram, Linkedin, Slack, Trello,
-    Figma, Dribbble, Chrome, Zap
+    Figma, Dribbble, Chrome, Zap,
+    History // 2. 导出 History 图标
 };
 
 // 颜色预设
@@ -55,5 +57,7 @@ export const DEFAULT_APPS = [
     { id: '4', type: 'app', name: 'YouTube', url: 'https://youtube.com', iconName: 'Youtube', color: 'bg-red-600 text-white', useFavicon: true },
     { id: '5', type: 'app', name: 'Twitter', url: 'https://x.com', iconName: 'Twitter', color: 'bg-blue-400 text-white', useFavicon: true },
     { id: '6', type: 'app', name: 'Instagram', url: 'https://instagram.com', iconName: 'Instagram', color: 'bg-pink-500 text-white', useFavicon: true },
+    // 3. 新增两个默认应用：历史记录和书签
+    { id: '7', type: 'app', name: 'History', url: 'chrome://history', iconName: 'History', color: 'bg-orange-500 text-white', useFavicon: false },
+    { id: '8', type: 'app', name: 'Bookmarks', url: 'chrome://bookmarks', iconName: 'Bookmark', color: 'bg-teal-500 text-white', useFavicon: false },
 ];
-
