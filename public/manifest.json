@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "jm_new_tab",
+  "name": "essy_new_tab",
   "version": "1.0",
   "description": "A clean, iOS-styled new tab page.",
   "chrome_url_overrides": {

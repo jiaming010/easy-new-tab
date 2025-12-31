@@ -48,7 +48,7 @@ export default function SettingsPanel({
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `ios-new-tab-config-${new Date().getTime()}.json`;
+        link.download = `easy-new-tab-config-${new Date().getTime()}.json`;
         link.click();
         URL.revokeObjectURL(url);
     };
