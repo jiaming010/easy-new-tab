@@ -1,22 +1,21 @@
-// 图标缓存管理系统 - 使用 IndexedDB 存储高清图标
 const DB_NAME = 'IconCacheDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'icons';
-const CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7天过期
+const CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000;
+const FAVICON_SIZE = 256;
 
 class IconCache {
     constructor() {
         this.db = null;
-        this.initDB();
+        this.initPromise = this.initDB();
     }
 
-    // 初始化 IndexedDB
     async initDB() {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
 
             request.onerror = () => {
-                console.error('IndexedDB 打开失败:', request.error);
+                console.error('Failed to open IndexedDB:', request.error);
                 reject(request.error);
             };
 
@@ -35,15 +34,13 @@ class IconCache {
         });
     }
 
-    // 确保数据库已初始化
     async ensureDB() {
         if (!this.db) {
-            await this.initDB();
+            await this.initPromise;
         }
         return this.db;
     }
 
-    // 从缓存获取图标
     async get(domain) {
         try {
             await this.ensureDB();
@@ -53,27 +50,20 @@ class IconCache {
                 const request = objectStore.get(domain);
 
                 request.onsuccess = () => {
-                    const result = request.result;
-                    if (result) {
-                        // 所有图标永不过期
-                        resolve(result.dataUrl);
-                    } else {
-                        resolve(null);
-                    }
+                    resolve(request.result?.dataUrl || null);
                 };
 
                 request.onerror = () => {
-                    console.error('读取缓存失败:', request.error);
+                    console.error('Failed to read icon cache:', request.error);
                     reject(request.error);
                 };
             });
         } catch (error) {
-            console.error('获取缓存图标失败:', error);
+            console.error('Failed to get cached icon:', error);
             return null;
         }
     }
 
-    // 保存图标到缓存
     async set(domain, dataUrl, isCustom = false) {
         try {
             await this.ensureDB();
@@ -84,7 +74,7 @@ class IconCache {
                     domain,
                     dataUrl,
                     timestamp: Date.now(),
-                    isCustom // 标记是否为用户自定义上传
+                    isCustom
                 };
                 const request = objectStore.put(data);
 
@@ -93,16 +83,15 @@ class IconCache {
                 };
 
                 request.onerror = () => {
-                    console.error('保存缓存失败:', request.error);
+                    console.error('Failed to write icon cache:', request.error);
                     reject(request.error);
                 };
             });
         } catch (error) {
-            console.error('缓存图标失败:', error);
+            console.error('Failed to cache icon:', error);
         }
     }
 
-    // 删除缓存
     async delete(domain) {
         try {
             await this.ensureDB();
@@ -120,11 +109,10 @@ class IconCache {
                 };
             });
         } catch (error) {
-            console.error('删除缓存失败:', error);
+            console.error('Failed to delete icon cache:', error);
         }
     }
 
-    // 清空所有缓存
     async clear() {
         try {
             await this.ensureDB();
@@ -142,11 +130,10 @@ class IconCache {
                 };
             });
         } catch (error) {
-            console.error('清空缓存失败:', error);
+            console.error('Failed to clear icon cache:', error);
         }
     }
 
-    // 获取缓存统计信息
     async getStats() {
         try {
             await this.ensureDB();
@@ -167,160 +154,125 @@ class IconCache {
                 };
             });
         } catch (error) {
-            console.error('获取缓存统计失败:', error);
+            console.error('Failed to read icon cache stats:', error);
             return { count: 0, expiryDays: 7 };
         }
     }
 }
 
-// 创建单例
 export const iconCache = new IconCache();
 
-// 获取高清图标（带缓存）- 使用 Google S2 Converter API
 export async function fetchIconWithCache(url, options = {}) {
     const { timeout = 8000 } = options;
-    
+
     try {
         const urlObj = new URL(url);
         const domain = urlObj.hostname;
-
-        // 1. 先检查缓存
         const cachedIcon = await iconCache.get(domain);
-        if (cachedIcon) {
+
+        if (isCachedImageData(cachedIcon)) {
             return cachedIcon;
         }
 
-        // 2. 使用 Google S2 Converter API 获取高清图标
-        // 优势：Google 官方服务，支持指定高清尺寸（size=256），图标质量更好
-        // 注意：直接返回 URL 而不是 dataURL，避免 CORS 问题
-        const iconUrl = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=256`;
-
-        try {
-            // 验证图片是否可访问
-            const isValid = await validateImageUrl(iconUrl, timeout);
-            if (isValid) {
-                // 保存 URL 到缓存（不转换为 dataURL，避免 CORS 问题）
-                await iconCache.set(domain, iconUrl, false);
-                return iconUrl;
-            }
-        } catch (error) {
-            console.log(`Google S2 Converter 获取失败: ${domain}`, error);
+        if (cachedIcon) {
+            await iconCache.delete(domain);
         }
 
-        // 3. 获取失败，返回 null（调用方会显示文字图标）
-        return null;
+        const iconUrl = buildGoogleFaviconUrl(domain);
+        const dataUrl = await fetchImageAsDataUrl(iconUrl, timeout);
+
+        await iconCache.set(domain, dataUrl, false);
+        return dataUrl;
     } catch (error) {
-        console.error('获取图标失败:', error);
+        console.error('Failed to fetch icon:', error);
         return null;
     }
 }
 
-// 验证图片 URL 是否可访问（不转换为 dataURL，避免 CORS 问题）
-function validateImageUrl(url, timeout = 5000) {
+function buildGoogleFaviconUrl(domain) {
+    const params = new URLSearchParams({
+        client: 'SOCIAL',
+        type: 'FAVICON',
+        fallback_opts: 'TYPE,SIZE,URL',
+        url: `https://${domain}`,
+        size: String(FAVICON_SIZE)
+    });
+
+    return `https://t2.gstatic.com/faviconV2?${params.toString()}`;
+}
+
+function isCachedImageData(value) {
+    return typeof value === 'string' && value.startsWith('data:image/');
+}
+
+async function fetchImageAsDataUrl(url, timeout = 5000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+        const response = await fetch(url, {
+            signal: controller.signal,
+            cache: 'force-cache'
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+            throw new Error('Response is not a valid image');
+        }
+
+        return await blobToDataUrl(blob);
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+function blobToDataUrl(blob) {
     return new Promise((resolve, reject) => {
-        const img = new Image();
-        // 不设置 crossOrigin，因为我们只需要验证图片是否可加载
-        
-        const timeoutId = setTimeout(() => {
-            img.src = '';
-            reject(new Error('加载超时'));
-        }, timeout);
-
-        img.onload = () => {
-            clearTimeout(timeoutId);
-            resolve(true);
-        };
-
-        img.onerror = () => {
-            clearTimeout(timeoutId);
-            reject(new Error('加载失败'));
-        };
-
-        img.src = url;
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('Failed to read image'));
+        reader.readAsDataURL(blob);
     });
 }
 
-// 加载图片并转换为 Data URL（用于自定义图标上传）
-function loadImageAsDataUrl(url, timeout = 5000) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        const timeoutId = setTimeout(() => {
-            img.src = '';
-            reject(new Error('加载超时'));
-        }, timeout);
-
-        img.onload = () => {
-            clearTimeout(timeoutId);
-            try {
-                // 创建 canvas 来获取 data URL
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth || img.width;
-                canvas.height = img.naturalHeight || img.height;
-                
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                
-                const dataUrl = canvas.toDataURL('image/png');
-                resolve(dataUrl);
-            } catch (error) {
-                reject(error);
-            }
-        };
-
-        img.onerror = () => {
-            clearTimeout(timeoutId);
-            reject(new Error('加载失败'));
-        };
-
-        img.src = url;
-    });
-}
-
-// 预加载图标（批量）
 export async function preloadIcons(urls) {
-    const promises = urls.map(url => fetchIconWithCache(url));
-    const results = await Promise.allSettled(promises);
+    const results = await Promise.allSettled(urls.map(url => fetchIconWithCache(url)));
     return results.map((result, index) => ({
         url: urls[index],
-        success: result.status === 'fulfilled',
-        dataUrl: result.status === 'fulfilled' ? result.value : null // 返回图标 URL
+        success: result.status === 'fulfilled' && Boolean(result.value),
+        dataUrl: result.status === 'fulfilled' ? result.value : null
     }));
 }
 
-// 上传自定义图片并缓存（永不过期）
 export async function uploadCustomIcon(file, appId) {
     return new Promise((resolve, reject) => {
         if (!file) {
-            reject(new Error('没有选择文件'));
+            reject(new Error('No file selected'));
             return;
         }
 
-        // 检查文件类型
         if (!file.type.startsWith('image/')) {
-            reject(new Error('请上传图片文件'));
+            reject(new Error('Please upload an image file'));
             return;
         }
 
-        // 检查文件大小（限制5MB）
         if (file.size > 5 * 1024 * 1024) {
-            reject(new Error('图片大小不能超过5MB'));
+            reject(new Error('Image size cannot exceed 5MB'));
             return;
         }
 
         const reader = new FileReader();
-        
-        reader.onload = async (e) => {
+
+        reader.onload = async (event) => {
             try {
-                const dataUrl = e.target.result;
-                
-                // 压缩图片到合适尺寸
-                const compressedDataUrl = await compressImage(dataUrl, 256, 256);
-                
-                // 保存到缓存（标记为自定义，永不过期）
+                const dataUrl = event.target.result;
+                const compressedDataUrl = await compressImage(dataUrl, FAVICON_SIZE, FAVICON_SIZE);
+
                 await iconCache.set(`custom_${appId}`, compressedDataUrl, true);
-                
                 resolve(compressedDataUrl);
             } catch (error) {
                 reject(error);
@@ -328,54 +280,45 @@ export async function uploadCustomIcon(file, appId) {
         };
 
         reader.onerror = () => {
-            reject(new Error('文件读取失败'));
+            reject(new Error('Failed to read file'));
         };
 
         reader.readAsDataURL(file);
     });
 }
 
-// 压缩图片到指定尺寸（正方形裁剪，适合铺满显示）
 function compressImage(dataUrl, maxWidth, maxHeight) {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        
+
         img.onload = () => {
             try {
-                const size = Math.min(maxWidth, maxHeight); // 统一尺寸为正方形
-                
-                // 创建 canvas 进行压缩
+                const size = Math.min(maxWidth, maxHeight);
                 const canvas = document.createElement('canvas');
                 canvas.width = size;
                 canvas.height = size;
-                
+
                 const ctx = canvas.getContext('2d');
-                
-                // 计算裁剪参数（居中裁剪）
                 const sourceSize = Math.min(img.width, img.height);
                 const sourceX = (img.width - sourceSize) / 2;
                 const sourceY = (img.height - sourceSize) / 2;
-                
-                // 绘制图片（居中裁剪为正方形）
+
                 ctx.drawImage(
                     img,
-                    sourceX, sourceY, sourceSize, sourceSize,  // 源图裁剪
-                    0, 0, size, size  // 目标画布
+                    sourceX, sourceY, sourceSize, sourceSize,
+                    0, 0, size, size
                 );
-                
-                // 转换为 Data URL
-                const compressedDataUrl = canvas.toDataURL('image/png', 0.9);
-                resolve(compressedDataUrl);
+
+                resolve(canvas.toDataURL('image/png', 0.9));
             } catch (error) {
                 reject(error);
             }
         };
-        
+
         img.onerror = () => {
-            reject(new Error('图片加载失败'));
+            reject(new Error('Failed to load image'));
         };
-        
+
         img.src = dataUrl;
     });
 }
-

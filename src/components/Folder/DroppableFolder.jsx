@@ -1,24 +1,17 @@
 import React from 'react';
+import { Edit3, Minus } from 'lucide-react';
+import { motion as Motion } from 'framer-motion';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Edit3, Minus } from 'lucide-react'; // 引入 Minus
-import { motion } from 'framer-motion';
 import FolderMiniIcon from './FolderMiniIcon';
 
 const sizeClasses = {
-    sm: "w-16 h-16 rounded-xl",
-    md: "w-20 h-20 rounded-2xl",
-    lg: "w-28 h-28 rounded-3xl"
+    sm: 'h-16 w-16 rounded-2xl',
+    md: 'h-20 w-20 rounded-[1.35rem]',
+    lg: 'h-28 w-28 rounded-[1.7rem]'
 };
 
-export default function DroppableFolder({
-                                            app,
-                                            size = "md",
-                                            onClick,
-                                            onEdit,
-                                            onDelete,
-                                            editMode
-                                        }) {
+export default function DroppableFolder({ app, size = 'md', onClick, onEdit, onDelete, editMode }) {
     const {
         attributes,
         listeners,
@@ -30,11 +23,7 @@ export default function DroppableFolder({
     } = useSortable({
         id: app.id,
         disabled: false,
-        data: {
-            type: 'folder',
-            app: app,
-            accepts: ['app']
-        }
+        data: { type: 'folder', app, accepts: ['app'] }
     });
 
     const style = {
@@ -44,91 +33,64 @@ export default function DroppableFolder({
         zIndex: isDragging || isOver ? 50 : 'auto',
     };
 
-    const displayApps = [...app.apps.slice(0, 9)];
-    while (displayApps.length < 9) {
-        displayApps.push({ id: `empty-${displayApps.length}`, isEmpty: true });
-    }
+    const displayApps = Array.from({ length: 9 }, (_, index) => (app.apps || [])[index]);
 
     return (
         <div
-            className="relative flex flex-col items-center gap-1 touch-none outline-none"
+            className="relative flex touch-none flex-col items-center gap-2 rounded-2xl p-2 outline-none"
             ref={setNodeRef}
             style={style}
             {...attributes}
             {...listeners}
         >
-            <div
-                className="flex flex-col items-center gap-1 cursor-pointer group"
+            <button
+                className={`flex flex-col items-center gap-2 outline-none ${editMode ? 'wiggle-animation' : ''}`}
                 onClick={!isDragging ? onClick : undefined}
-                onContextMenu={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (onEdit) {
-                        onEdit(app);
-                    }
+                onContextMenu={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onEdit?.(app);
                 }}
             >
-                <motion.div
-                    animate={isOver ? "hover" : "idle"}
+                <Motion.div
+                    animate={isOver ? 'hover' : 'idle'}
                     variants={{
-                        idle: {
-                            scale: 1,
-                            backgroundColor: "rgba(255, 255, 255, 0.2)",
-                            boxShadow: "0 0 0px rgba(0,0,0,0)"
-                        },
-                        hover: {
-                            scale: 1.15,
-                            backgroundColor: "rgba(255, 255, 255, 0.35)",
-                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255,255,255,0.3)"
-                        }
+                        idle: { scale: 1, backgroundColor: 'rgba(255,255,255,0.18)' },
+                        hover: { scale: 1.1, backgroundColor: 'rgba(255,255,255,0.3)' }
                     }}
-                    transition={{
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 20
-                    }}
-                    className={`grid grid-cols-3 gap-1.5 p-2.5 backdrop-blur-md ${sizeClasses[size]} overflow-hidden border border-white/10 ${
-                        editMode ? 'ring-2 ring-yellow-400' : ''
-                    }`}
+                    transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+                    className={`grid grid-cols-3 gap-1.5 overflow-hidden border border-white/20 p-2.5 shadow-[0_18px_35px_rgba(0,0,0,0.25)] backdrop-blur-2xl ${sizeClasses[size]} ${editMode ? 'ring-2 ring-white/80' : ''}`}
                 >
-                    {displayApps.map((subApp, idx) => (
-                        <div key={subApp.id || idx} className="relative z-10">
-                            {subApp.isEmpty ? (
-                                <div className="aspect-square rounded-md bg-white/5 border border-white/5" />
-                            ) : (
-                                <FolderMiniIcon app={subApp} />
-                            )}
+                    {displayApps.map((subApp, index) => (
+                        <div key={subApp?.id || `empty-${index}`} className="relative z-10">
+                            {subApp ? <FolderMiniIcon app={subApp} /> : <div className="aspect-square rounded-md bg-white/10" />}
                         </div>
                     ))}
-                </motion.div>
+                </Motion.div>
 
-                <span className="text-sm text-white font-medium drop-shadow-md transition-opacity duration-200">
+                <span className="max-w-24 truncate text-sm font-semibold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
                     {app.name}
                 </span>
-            </div>
+            </button>
 
-            {/* 编辑模式下的操作按钮 */}
             {editMode && (
                 <>
-                    {/* 左上角删除按钮 (iOS 风格) */}
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation();
+                        onClick={(event) => {
+                            event.stopPropagation();
                             onDelete?.(app.id);
                         }}
-                        className="absolute -top-2 -left-2 z-20 w-6 h-6 bg-gray-500/80 backdrop-blur-md rounded-full text-white flex items-center justify-center hover:bg-red-500 transition-colors shadow-sm"
+                        className="absolute left-0 top-0 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-white/40 bg-slate-950/70 text-white shadow-lg backdrop-blur-md transition hover:bg-red-500"
                         title="删除文件夹"
                     >
                         <Minus size={14} strokeWidth={3} />
                     </button>
-
-                    {/* 右上角编辑按钮 (保留用于重命名，样式微调) */}
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation();
+                        onClick={(event) => {
+                            event.stopPropagation();
                             onEdit?.(app);
                         }}
-                        className="absolute -top-2 -right-2 z-20 w-6 h-6 bg-blue-500/80 backdrop-blur-md rounded-full text-white flex items-center justify-center hover:bg-blue-600 transition-colors shadow-sm"
+                        className="absolute right-0 top-0 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-white/40 bg-white/90 text-slate-900 shadow-lg backdrop-blur-md transition hover:bg-white"
                         title="编辑文件夹"
                     >
                         <Edit3 size={12} />

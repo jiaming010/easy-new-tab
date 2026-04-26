@@ -1,24 +1,17 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus } from 'lucide-react';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
+import { Plus, X } from 'lucide-react';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import FolderAppIcon from '../AppIcon/FolderAppIcon';
 
-export default function FolderModal({
-                                        openFolder,
-                                        onClose,
-                                        editMode,
-                                        apps,
-                                        setApps,
-                                        onAddApp
-                                    }) {
+export default function FolderModal({ openFolder, onClose, editMode, apps, setApps, onAddApp }) {
     if (!openFolder) return null;
 
     const handleDeleteApp = (appId) => {
         if (confirm('确定要删除这个应用吗？')) {
-            setApps(apps.map(folder => {
+            setApps(apps.map((folder) => {
                 if (folder.id === openFolder.id && folder.type === 'folder') {
-                    return { ...folder, apps: folder.apps.filter(a => a.id !== appId) };
+                    return { ...folder, apps: folder.apps.filter((app) => app.id !== appId) };
                 }
                 return folder;
             }));
@@ -26,13 +19,11 @@ export default function FolderModal({
     };
 
     const handleUpdateApp = (updatedApp) => {
-        setApps(apps.map(folder => {
+        setApps(apps.map((folder) => {
             if (folder.id === openFolder.id && folder.type === 'folder') {
                 return {
                     ...folder,
-                    apps: folder.apps.map(a =>
-                        a.id === updatedApp.id ? updatedApp : a
-                    )
+                    apps: folder.apps.map((app) => app.id === updatedApp.id ? updatedApp : app)
                 };
             }
             return folder;
@@ -42,48 +33,47 @@ export default function FolderModal({
     return (
         <AnimatePresence>
             <>
-                <motion.div
+                <Motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm"
+                    className="fixed inset-0 z-[60] bg-slate-950/45 backdrop-blur-md"
                 />
-                <motion.div
-                    // 调整初始动画：从中心放大
-                    initial={{ scale: 0.5, opacity: 0, x: "-50%", y: "-50%" }}
-                    animate={{ scale: 1, opacity: 1, x: "-50%", y: "-50%" }}
-                    exit={{ scale: 0.5, opacity: 0, x: "-50%", y: "-50%" }}
-                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                    onClick={(e) => e.stopPropagation()}
-                    // 修改点：w-[22rem] 固定宽度，rounded-[2.5rem] 更大的圆角
-                    className="fixed top-1/2 left-1/2 z-[70] w-[22rem] bg-white/20 backdrop-blur-3xl border border-white/20 rounded-[2.5rem] p-6 shadow-2xl flex flex-col"
+                <Motion.div
+                    initial={{ scale: 0.92, opacity: 0, x: '-50%', y: '-50%' }}
+                    animate={{ scale: 1, opacity: 1, x: '-50%', y: '-50%' }}
+                    exit={{ scale: 0.92, opacity: 0, x: '-50%', y: '-50%' }}
+                    transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                    onClick={(event) => event.stopPropagation()}
+                    className="fixed left-1/2 top-1/2 z-[70] flex max-h-[82vh] w-[min(92vw,26rem)] flex-col rounded-[2rem] border border-white/20 bg-white/20 p-5 text-white shadow-2xl backdrop-blur-3xl"
                 >
-                    <div className="flex justify-between items-center w-full mb-6 text-white px-2">
-                        {/* 修改点：字体改小一点，适应紧凑布局 */}
-                        <h2 className="text-xl font-bold truncate pr-4">{openFolder.name}</h2>
+                    <div className="flex items-center justify-between gap-4 px-1 pb-5">
+                        <div className="min-w-0">
+                            <h2 className="truncate text-xl font-bold">{openFolder.name}</h2>
+                            <p className="mt-1 text-sm text-white/65">{openFolder.apps?.length || 0} 个项目</p>
+                        </div>
                         <button
                             onClick={onClose}
-                            className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/25"
+                            title="关闭"
                         >
-                            <X size={16} />
+                            <X size={18} />
                         </button>
                     </div>
 
                     <SortableContext
-                        items={(openFolder.apps || []).map(app => `folder-${openFolder.id}-app-${app.id}`)}
+                        items={(openFolder.apps || []).map((app) => `folder-${openFolder.id}-app-${app.id}`)}
                         strategy={rectSortingStrategy}
                     >
-                        {/* 修改点：grid-cols-3 (九宫格)，gap-4 (间距更紧凑) */}
-                        <div className="grid grid-cols-3 gap-4 w-full place-items-center mb-2">
+                        <div className="grid w-full grid-cols-3 place-items-center gap-4 overflow-y-auto pb-1">
                             {openFolder.apps?.map((app) => (
                                 <FolderAppIcon
                                     key={app.id}
                                     app={app}
-                                    // 修改点：使用 md 尺寸，避免图标过大
-                                    size="md" 
+                                    size="md"
                                     folderId={openFolder.id}
-                                    onEdit={(app) => onAddApp({ ...app, parentFolderId: openFolder.id })}
+                                    onEdit={(folderApp) => onAddApp({ ...folderApp, parentFolderId: openFolder.id })}
                                     onDelete={handleDeleteApp}
                                     onUpdateApp={handleUpdateApp}
                                     editMode={editMode}
@@ -91,26 +81,23 @@ export default function FolderModal({
                             ))}
 
                             {editMode && (
-                                <div
-                                    className="flex flex-col items-center gap-2 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                                <button
+                                    className="flex flex-col items-center gap-2 rounded-2xl p-2 text-white/85 transition hover:bg-white/10 hover:text-white"
                                     onClick={() => onAddApp({ parentFolderId: openFolder.id })}
                                 >
-                                    {/* 修改点：添加按钮的大小也随之调整 */}
-                                    <div className="w-[4.5rem] h-[4.5rem] rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-lg hover:bg-white/25 transition-all">
-                                        <Plus className="text-white" size={32} />
-                                    </div>
-                                    <span className="text-xs text-white font-medium drop-shadow-md">添加</span>
-                                </div>
+                                    <span className="flex h-20 w-20 items-center justify-center rounded-[1.35rem] border border-white/20 bg-white/15 shadow-xl backdrop-blur-xl">
+                                        <Plus size={32} />
+                                    </span>
+                                    <span className="text-sm font-semibold">添加</span>
+                                </button>
                             )}
                         </div>
                     </SortableContext>
 
                     {(!openFolder.apps || openFolder.apps.length === 0) && !editMode && (
-                        <div className="text-center text-white/70 py-6">
-                            <p className="text-sm">文件夹为空</p>
-                        </div>
+                        <div className="py-10 text-center text-sm text-white/65">文件夹为空</div>
                     )}
-                </motion.div>
+                </Motion.div>
             </>
         </AnimatePresence>
     );

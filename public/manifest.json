@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "essy_new_tab",
-  "version": "1.0",
+  "version": "1.1.0",
   "description": "A clean, iOS-styled new tab page.",
   "chrome_url_overrides": {
     "newtab": "index.html"
@@ -11,5 +11,8 @@
     "48": "logo.svg",
     "128": "logo.svg"
   },
-  "permissions": ["storage"]
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://t2.gstatic.com/*"
+  ]
 }
